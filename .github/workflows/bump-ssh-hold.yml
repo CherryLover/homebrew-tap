@@ -1,0 +1,52 @@
+name: Bump ssh-hold
+
+# ssh-hold 发了新版之后，把 Formula 里的 url 和 sha256 跟上。
+# 只写自己这个仓库，用内置的 GITHUB_TOKEN 就够，不需要额外配 secret。
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 对齐到最新 Release
+        run: |
+          set -euo pipefail
+          formula=Formula/ssh-hold.rb
+
+          tag="$(curl -fsSL https://api.github.com/repos/CherryLover/ssh-hold/releases/latest \
+            | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+          [ -n "$tag" ] || { echo "查不到最新 Release"; exit 1; }
+          version="${tag#v}"
+
+          current="$(sed -n 's|.*/releases/download/v\([^/]*\)/.*|\1|p' "$formula" | head -1)"
+          if [ "$version" = "$current" ]; then
+            echo "已经是 ${version}，不用动。"
+            exit 0
+          fi
+          echo "${current} -> ${version}"
+
+          url="https://github.com/CherryLover/ssh-hold/releases/download/${tag}/ssh-hold-${version}.tar.gz"
+          curl -fsSLo pkg.tar.gz "$url"
+          sha="$(sha256sum pkg.tar.gz | cut -d' ' -f1)"
+          rm -f pkg.tar.gz
+
+          # livecheck 里的 `url :stable` 没有引号，不会被这条命中。
+          sed -i "s|^  url \".*\"$|  url \"${url}\"|" "$formula"
+          sed -i "s|^  sha256 \".*\"$|  sha256 \"${sha}\"|" "$formula"
+
+          grep -q "$version" "$formula" || { echo "formula 没改成功"; exit 1; }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$formula"
+          git commit -m "ssh-hold ${version}"
+          git push
