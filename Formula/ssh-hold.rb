@@ -1,8 +1,8 @@
 class SshHold < Formula
   desc "Hold one SSH connection open and reuse it for every command after"
   homepage "https://github.com/CherryLover/ssh-hold"
-  url "https://github.com/CherryLover/ssh-hold/releases/download/v1.1.0/ssh-hold-1.1.0.tar.gz"
-  sha256 "c0ab9242ea8e3dc07436858f665e1198f2670accec56f8d44ccd3c909d72aacf"
+  url "https://github.com/CherryLover/ssh-hold/releases/download/v1.2.0/ssh-hold-1.2.0.tar.gz"
+  sha256 "0d3b28138ea034d51247505b498ad7a519c9ef753a50a94ac4d1d60ae61c779d"
   license "MIT"
 
   livecheck do
